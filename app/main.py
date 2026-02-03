@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Header, HTTPException, Depends, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 from app.models import IncomingRequest, ApiResponse, CallbackPayload, ExtractedIntelligence
 from app.services.detector import detector
@@ -16,6 +17,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("honey-pot")
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def get_dashboard():
