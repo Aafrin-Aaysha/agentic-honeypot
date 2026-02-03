@@ -2,9 +2,12 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Any
 
 class Message(BaseModel):
-    sender: str
+    sender: Optional[str] = "user"
     text: str
     timestamp: Optional[str] = None
+    
+    class Config:
+        populate_by_name = True
 
 class Metadata(BaseModel):
     channel: Optional[str] = None
@@ -12,10 +15,13 @@ class Metadata(BaseModel):
     locale: Optional[str] = None
 
 class IncomingRequest(BaseModel):
-    sessionId: str
+    sessionId: Optional[str] = Field(default="global-session", alias="session_id")
     message: Message
     conversationHistory: Optional[List[Message]] = []
     metadata: Optional[Metadata] = None
+
+    class Config:
+        populate_by_name = True
 
 class ApiResponse(BaseModel):
     status: str

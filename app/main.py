@@ -1,4 +1,6 @@
-from fastapi import FastAPI, Header, HTTPException, Depends
+from fastapi import FastAPI, Header, HTTPException, Depends, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from typing import Optional
 from app.models import IncomingRequest, ApiResponse, CallbackPayload, ExtractedIntelligence
 from app.services.detector import detector
@@ -13,6 +15,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("honey-pot")
 
 app = FastAPI()
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.error(f"Validation error: {exc.errors()}")
+    body = await request.body()
+    logger.error(f"Request Body: {body.decode()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": body.decode()},
+    )
 
 async def verify_api_key(x_api_key: str = Header(...)):
     if not x_api_key:
