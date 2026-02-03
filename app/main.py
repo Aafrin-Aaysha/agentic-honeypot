@@ -58,7 +58,7 @@ async def handle_message(request: IncomingRequest, api_key: str = Depends(verify
     session = session_manager.get_session(session_id)
     
     # 2. Increment Message Count
-    session_manager.increment_message_count(session_id)
+    session_manager.increment_message_count(session_id, request.message.text)
     
     # 3. Analyze content
     current_text = request.message.text

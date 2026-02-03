@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 class SessionState(BaseModel):
     sessionId: str
     totalMessages: int = 0
+    lastMessage: str = ""
     callbackSent: bool = False
     scamDetected: bool = False
     # Use sets for unique accumulation (converted to list on export)
@@ -46,9 +47,10 @@ class SessionManager:
         session = self.get_session(session_id)
         session.scamDetected = True
 
-    def increment_message_count(self, session_id: str):
-        session = self.get_session(session_id)
-        session.totalMessages += 1
+    def increment_message_count(self, session_id: str, last_message: str = ""):
+        if session_id in self.sessions:
+            self.sessions[session_id].totalMessages += 1
+            self.sessions[session_id].lastMessage = last_message
 
     def mark_callback_sent(self, session_id: str):
         session = self.get_session(session_id)
@@ -78,10 +80,11 @@ class SessionManager:
             intel_count = len(session.bankAccounts) + len(session.upiIds) + len(session.phishingLinks) + len(session.phoneNumbers)
             total_intel_items += intel_count
             
-            # If has intel, add to recent list
-            if intel_count > 0:
+            # If has intel OR is a detected scam, add to recent list
+            if intel_count > 0 or session.scamDetected:
                 recent_intel.append({
                     "session_id": sid,
+                    "last_message": session.lastMessage,
                     "phones": session.phoneNumbers,
                     "upis": session.upiIds,
                     "links": session.phishingLinks

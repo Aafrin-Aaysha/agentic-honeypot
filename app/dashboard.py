@@ -74,8 +74,8 @@ DASHBOARD_HTML = """
                     <thead class="text-xs text-gray-400 uppercase border-b border-gray-700">
                         <tr>
                             <th class="px-4 py-3">Timestamp</th>
-                            <th class="px-4 py-3">Session ID</th>
-                            <th class="px-4 py-3">Detected Intel</th>
+                            <th class="px-4 py-3">Last Message</th>
+                            <th class="px-4 py-3">Extracted Intel</th>
                             <th class="px-4 py-3">Status</th>
                         </tr>
                     </thead>
@@ -103,17 +103,18 @@ DASHBOARD_HTML = """
 
                 // Update Table
                 const tbody = document.getElementById('intelTable');
-                if (data.recent_intel.length > 0) {
-                    tbody.innerHTML = data.recent_intel.map(item => `
+                if (data.recent_intel && data.recent_intel.length > 0) {
+                    tbody.innerHTML = data.recent_intel.reverse().map(item => `
                         <tr class="border-b border-gray-800 hover:bg-white/5 transition">
-                            <td class="px-4 py-3 text-gray-400">${new Date().toLocaleTimeString()}</td>
-                            <td class="px-4 py-3 font-mono text-xs text-neon">${item.session_id.substring(0,8)}...</td>
+                            <td class="px-4 py-3 text-gray-500 text-xs">${new Date().toLocaleTimeString()}</td>
+                            <td class="px-4 py-3 max-w-xs truncate text-gray-300" title="${item.last_message}">${item.last_message}</td>
                             <td class="px-4 py-3">
-                                ${item.phones.length ? `<span class="bg-blue-900 text-blue-300 px-2 py-1 rounded text-xs mr-1">📞 ${item.phones.join(', ')}</span>` : ''}
-                                ${item.upis.length ? `<span class="bg-green-900 text-green-300 px-2 py-1 rounded text-xs mr-1">💸 ${item.upis.join(', ')}</span>` : ''}
-                                ${item.links.length ? `<span class="bg-red-900 text-red-300 px-2 py-1 rounded text-xs">🔗 Link</span>` : ''}
+                                ${item.phones.length ? `<span class="bg-blue-900/50 text-blue-300 border border-blue-700 px-2 py-1 rounded text-[10px] mr-1">📞 ${item.phones[0]}</span>` : ''}
+                                ${item.upis.length ? `<span class="bg-green-900/50 text-green-300 border border-green-700 px-2 py-1 rounded text-[10px] mr-1">💸 UPI</span>` : ''}
+                                ${item.links.length ? `<span class="bg-red-900/50 text-red-300 border border-red-700 px-2 py-1 rounded text-[10px]">🔗 LINK</span>` : ''}
+                                ${!item.phones.length && !item.upis.length && !item.links.length ? '<span class="text-gray-600 text-[10px]">Keywords Only</span>' : ''}
                             </td>
-                            <td class="px-4 py-3"><span class="text-green-400">● Intercepted</span></td>
+                            <td class="px-4 py-3"><span class="text-green-400 font-mono text-[10px] px-2 py-1 bg-green-900/20 rounded-full border border-green-800/30">LOCKED ON</span></td>
                         </tr>
                     `).join('');
                 }
