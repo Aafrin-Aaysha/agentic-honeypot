@@ -1,10 +1,10 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Union
 
 class Message(BaseModel):
     sender: Optional[str] = "user"
     text: str
-    timestamp: Optional[str] = None
+    timestamp: Optional[Union[str, int, float]] = None
     
     class Config:
         populate_by_name = True
