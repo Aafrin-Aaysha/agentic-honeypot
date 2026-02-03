@@ -65,4 +65,33 @@ class SessionManager:
         }
 
 # Singleton
+    def get_stats(self):
+        total_scams = 0
+        total_intel_items = 0
+        recent_intel = []
+        
+        for sid, session in self.sessions.items():
+            if session.scamDetected:
+                total_scams += 1
+            
+            # Count collected items
+            intel_count = len(session.bankAccounts) + len(session.upiIds) + len(session.phishingLinks) + len(session.phoneNumbers)
+            total_intel_items += intel_count
+            
+            # If has intel, add to recent list
+            if intel_count > 0:
+                recent_intel.append({
+                    "session_id": sid,
+                    "phones": session.phoneNumbers,
+                    "upis": session.upiIds,
+                    "links": session.phishingLinks
+                })
+        
+        return {
+            "active_sessions": len(self.sessions),
+            "scams_detected": total_scams,
+            "intel_items": total_intel_items,
+            "recent_intel": recent_intel[-10:] # Last 10
+        }
+
 session_manager = SessionManager()

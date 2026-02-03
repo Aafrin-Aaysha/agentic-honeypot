@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Header, HTTPException, Depends, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from typing import Optional
 from app.models import IncomingRequest, ApiResponse, CallbackPayload, ExtractedIntelligence
 from app.services.detector import detector
@@ -8,6 +8,7 @@ from app.services.agent import agent
 from app.services.extractor import extractor
 from app.services.callback import callback_service
 from app.services.state import session_manager
+from app.dashboard import DASHBOARD_HTML
 import logging
 
 # Configure logging
@@ -15,6 +16,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("honey-pot")
 
 app = FastAPI()
+
+@app.get("/dashboard", response_class=HTMLResponse)
+async def get_dashboard():
+    return DASHBOARD_HTML
+
+@app.get("/api/stats")
+async def get_stats():
+    return session_manager.get_stats()
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
