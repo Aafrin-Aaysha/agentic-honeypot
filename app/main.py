@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Header, HTTPException, Depends, Request, Body
+from fastapi import FastAPI, Header, HTTPException, Depends, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -208,7 +208,13 @@ async def verify_api_key(x_api_key: Optional[str] = Header(None)):
     return x_api_key
 
 @app.post("/api/v1/message", response_model=ApiResponse)
-async def handle_message(body: Union[dict, Any, None] = Body(None), api_key: str = Depends(verify_api_key)):
+async def handle_message(request: Request, api_key: str = Depends(verify_api_key)):
+    # Manually parse body to avoid FastAPI pre-validation errors from malformed input
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
     # Normalize Body robustly so GUVI tester never triggers validation failure.
     normalized_data: Dict[str, Any] = {}
 
