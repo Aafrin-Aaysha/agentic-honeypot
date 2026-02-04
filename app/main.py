@@ -20,6 +20,33 @@ logger = logging.getLogger("honey-pot")
 
 app = FastAPI()
 
+
+@app.get('/manifest.json')
+async def manifest():
+    # Serve a minimal, valid web manifest to avoid "Manifest: Syntax error" in browsers
+    return JSONResponse(content={
+        "name": "Agentic Honey-Pot",
+        "short_name": "HoneyPot",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#0f172a",
+        "theme_color": "#0ea5e9",
+        "icons": []
+    })
+
+
+@app.get('/widget.js')
+async def local_widget():
+    # Provide a tiny local widget script as a safe fallback if external CDN fails
+    js = """
+    // Local fallback widget
+    (function(){
+        console.info('Local widget loaded');
+        window.honeypotWidget = { ready: true };
+    })();
+    """
+    return JSONResponse(content=js, media_type='application/javascript')
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -50,7 +77,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     except Exception:
         path = ""
 
-    if path == "/api/v1/message":
+    # Accept both with and without trailing slash
+    if path.rstrip("/") == "/api/v1/message":
         try:
             # Try to parse JSON body; fall back to raw bytes decode
             try:

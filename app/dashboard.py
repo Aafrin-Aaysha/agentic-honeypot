@@ -5,6 +5,7 @@ DASHBOARD_HTML = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agentic Honey-Pot | Live Threat Map</title>
+    <link rel="manifest" href="/manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -127,6 +128,8 @@ DASHBOARD_HTML = """
         setInterval(fetchStats, 3000);
         fetchStats();
     </script>
+        <!-- Local widget fallback to avoid external CDN failures showing errors in console -->
+        <script src="/widget.js" onerror="console.warn('Local widget failed to load')"></script>
 </body>
 </html>
 """
