@@ -38,10 +38,19 @@ async def get_stats():
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     logger.error(f"Validation error: {exc.errors()}")
     body = await request.body()
-    logger.error(f"Request Body: {body.decode()}")
+    try:
+        body_str = body.decode()
+    except:
+        body_str = "unable to decode"
+    
     return JSONResponse(
-        status_code=422,
-        content={"detail": exc.errors(), "body": body.decode()},
+        status_code=400,
+        content={
+            "status": "error",
+            "message": "INVALID_REQUEST_BODY",
+            "detail": exc.errors(),
+            "received_body": body_str
+        },
     )
 
 async def verify_api_key(x_api_key: str = Header(...)):
@@ -52,16 +61,30 @@ async def verify_api_key(x_api_key: str = Header(...)):
 @app.post("/api/v1/message", response_model=ApiResponse)
 async def handle_message(request: IncomingRequest, api_key: str = Depends(verify_api_key)):
     session_id = request.sessionId
-    logger.info(f"Processing message for session {session_id}")
+    
+    # Extract message text from multiple possible locations
+    current_text = None
+    if request.text:
+        current_text = request.text
+    elif request.message:
+        if isinstance(request.message, str):
+            current_text = request.message
+        elif hasattr(request.message, 'text'):
+            current_text = request.message.text
+            
+    if not current_text:
+        logger.warning(f"No text content found in request for session {session_id}")
+        current_text = "" # Default to empty string instead of failing
+        
+    logger.info(f"Processing message for session {session_id}: {current_text[:50]}...")
 
     # 1. Initialize/Get Session & details
     session = session_manager.get_session(session_id)
     
     # 2. Increment Message Count
-    session_manager.increment_message_count(session_id, request.message.text)
+    session_manager.increment_message_count(session_id, current_text)
     
     # 3. Analyze content
-    current_text = request.message.text
     full_text = current_text + " " + " ".join([m.text for m in (request.conversationHistory or [])])
     
     # 4. Scam Detection

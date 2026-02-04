@@ -16,7 +16,8 @@ class Metadata(BaseModel):
 
 class IncomingRequest(BaseModel):
     sessionId: Optional[str] = Field(default="global-session", alias="session_id")
-    message: Message
+    message: Optional[Union[Message, str]] = None
+    text: Optional[str] = None
     conversationHistory: Optional[List[Message]] = []
     metadata: Optional[Metadata] = None
 
