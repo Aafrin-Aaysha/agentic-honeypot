@@ -1,8 +1,10 @@
-from fastapi import FastAPI, Header, HTTPException, Depends, Request
+from fastapi import FastAPI, Header, HTTPException, Depends, Request, Body
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional
+from typing import Optional, Any, Dict, Union
+from datetime import datetime
+import uuid
 from app.models import IncomingRequest, ApiResponse, CallbackPayload, ExtractedIntelligence
 from app.services.detector import detector
 from app.services.agent import agent
@@ -59,7 +61,48 @@ async def verify_api_key(x_api_key: str = Header(...)):
     return x_api_key
 
 @app.post("/api/v1/message", response_model=ApiResponse)
-async def handle_message(request: IncomingRequest, api_key: str = Depends(verify_api_key)):
+async def handle_message(body: Any = Body(None), api_key: str = Depends(verify_api_key)):
+    # 1. Normalize Body (GUVI Tester Robustness)
+    normalized_data = {}
+    
+    if body is None or body == {}:
+        # Requirement: Generate new sessionId, default message
+        session_uuid = str(uuid.uuid4())[:8]
+        normalized_data = {
+            "sessionId": f"tester-{session_uuid}",
+            "message": {
+                "sender": "scammer",
+                "text": "test message",
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        }
+    elif isinstance(body, str):
+        normalized_data = {
+            "text": body
+        }
+    elif isinstance(body, dict):
+        normalized_data = body
+    else:
+        normalized_data = {"text": str(body)}
+
+    # Safely convert to IncomingRequest
+    try:
+        request = IncomingRequest(**normalized_data)
+    except Exception as e:
+        logger.warning(f"Forced normalization needed: {e}")
+        # Manual fallback to ensure it NEVER fails
+        request_msg = None
+        raw_msg = normalized_data.get("message")
+        if isinstance(raw_msg, dict):
+            request_msg = raw_msg.get("text", "test message")
+        elif isinstance(raw_msg, str):
+            request_msg = raw_msg
+            
+        request = IncomingRequest(
+            sessionId=normalized_data.get("sessionId", normalized_data.get("session_id", "tester-session")),
+            text=normalized_data.get("text") or request_msg or "test message"
+        )
+
     session_id = request.sessionId
     
     # Extract message text from multiple possible locations
