@@ -55,8 +55,10 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         },
     )
 
-async def verify_api_key(x_api_key: str = Header(...)):
+async def verify_api_key(x_api_key: Optional[str] = Header(None)):
     if not x_api_key:
+        raise HTTPException(status_code=403, detail="API Key Header (x-api-key) is missing")
+    if x_api_key != "secret-key":
         raise HTTPException(status_code=403, detail="Invalid API Key")
     return x_api_key
 
@@ -191,4 +193,4 @@ async def handle_message(body: Any = Body(None), api_key: str = Depends(verify_a
 
 @app.get("/")
 def health_check():
-    return {"status": "running"}
+    return {"status": "running", "version": "v1.2-robust-api"}
